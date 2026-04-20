@@ -1,0 +1,35 @@
+# AuthSpace — Login / Signup Page
+
+A clean, secure, expert-designed login and signup page. Pure HTML + CSS + vanilla JS. No frameworks, no dependencies.
+
+## Features
+- 🎨 Dark-theme UI with DM Serif Display typography
+- 🔒 Content-Security-Policy, X-Frame-Options, X-Content-Type-Options headers
+- 🛡️ XSS protection via DOM-safe `createTextNode` sanitization
+- 🤖 Bot detection via honeypot hidden field
+- ⏱️ Rate limiting — 5 failed login attempts triggers a 30s lockout
+- ✅ Client-side input validation (email regex, password length, name length)
+
+## CI/CD
+| Workflow | Trigger | Action |
+|---|---|---|
+| `ci.yml` | Every push to `main` | Validates HTML, deploys to GitHub Pages |
+| `security.yml` | Every push/PR + weekly | TruffleHog secret scan, XSS pattern scan, CodeQL, header check |
+
+## Live Demo
+`https://Adhi2326.github.io/login-page`
+
+## Setup
+```bash
+git clone https://github.com/Adhi2326/login-page.git
+cd login-page
+open index.html
+```
+
+## Alerts
+GitHub will automatically email you at your account email when:
+- Any workflow fails
+- A security vulnerability is detected (CodeQL / TruffleHog)
+- A PR is raised that breaks security checks
+
+To configure: **GitHub → Settings → Notifications → Actions**

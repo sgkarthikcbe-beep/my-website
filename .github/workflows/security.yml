@@ -1,0 +1,120 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'   # Every Monday 6 AM UTC — weekly automated scan
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  # ── 1. Secret scanning (TruffleHog) ──────────────────────────
+  secret-scan:
+    name: Detect Leaked Secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          extra_args: --only-verified
+
+  # ── 2. XSS / injection pattern check ─────────────────────────
+  xss-check:
+    name: XSS & Injection Pattern Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scan for dangerous patterns
+        run: |
+          echo "🔍 Scanning for dangerous JS patterns..."
+          PATTERNS=(
+            "innerHTML\s*="
+            "document\.write\s*("
+            "eval\s*\("
+            "setTimeout\s*(\s*['\"]"
+            "setInterval\s*(\s*['\"]"
+          )
+          FOUND=0
+          for pattern in "${PATTERNS[@]}"; do
+            MATCHES=$(grep -rn --include="*.html" --include="*.js" -E "$pattern" . || true)
+            if [ -n "$MATCHES" ]; then
+              echo "⚠️  Dangerous pattern detected: $pattern"
+              echo "$MATCHES"
+              FOUND=1
+            fi
+          done
+          if [ "$FOUND" -eq 1 ]; then
+            echo "❌ Security issues found. Review above patterns."
+            exit 1
+          fi
+          echo "✅ No dangerous patterns found."
+
+      - name : Send email alert on failure
+        if: failure()    # ← only runs if above step failed
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "🚨 XSS Threat Detected in ${{ github.repository }}"
+          to: your@email.com
+          from: your@email.com
+          body: |
+            XSS threat detected in commit ${{ github.sha }}
+            Branch: ${{ github.ref }}
+            Check Actions: ${{ github.server_url }}/${{ github.repository }}/actions
+
+  # ── 3. CodeQL analysis ───────────────────────────────────────
+  codeql:
+    name: CodeQL Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+          queries: security-extended
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript"
+
+  # ── 4. Security headers check ─────────────────────────────────
+  headers-check:
+    name: Verify Security Headers in HTML
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check CSP and security meta tags
+        run: |
+          echo "🔍 Checking for Content-Security-Policy..."
+          grep -q "Content-Security-Policy" index.html && echo "✅ CSP found" || (echo "❌ CSP meta tag missing!" && exit 1)
+
+          echo "🔍 Checking for X-Content-Type-Options..."
+          grep -q "X-Content-Type-Options" index.html && echo "✅ X-Content-Type-Options found" || (echo "❌ Missing!" && exit 1)
+
+          echo "🔍 Checking for X-Frame-Options..."
+          grep -q "X-Frame-Options" index.html && echo "✅ X-Frame-Options found" || (echo "❌ Missing!" && exit 1)
+
+          echo "✅ All security headers present."

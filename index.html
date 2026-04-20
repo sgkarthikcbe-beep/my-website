@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="X-Frame-Options" content="DENY" />
+  <title>AuthSpace</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --panel: #111118;
+      --border: rgba(255,255,255,0.07);
+      --accent: #c8f04e;
+      --accent-dim: rgba(200,240,78,0.12);
+      --text: #e8e8f0;
+      --muted: #6b6b80;
+      --error: #ff5c5c;
+      --radius: 16px;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(200,240,78,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 85% 80%, rgba(100,80,200,0.06) 0%, transparent 60%);
+    }
+
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px 40px 40px;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+      animation: rise 0.5s cubic-bezier(.22,.68,0,1.2) both;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(24px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.7rem;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    .logo span { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 36px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 28px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 9px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab.active {
+      background: var(--accent);
+      color: #0a0a0f;
+    }
+
+    .form { display: none; flex-direction: column; gap: 16px; }
+    .form.active { display: flex; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+
+    label {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    input {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+    input::placeholder { color: var(--muted); }
+    input.error { border-color: var(--error); }
+
+    /* Honeypot - hidden from real users */
+    .hp { display: none !important; }
+
+    .hint {
+      font-size: 0.75rem;
+      color: var(--error);
+      min-height: 16px;
+      display: none;
+    }
+    .hint.show { display: block; }
+
+    .lockout-msg {
+      font-size: 0.82rem;
+      color: var(--error);
+      background: rgba(255,92,92,0.08);
+      border: 1px solid rgba(255,92,92,0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: none;
+    }
+    .lockout-msg.show { display: block; }
+
+    button[type="submit"] {
+      margin-top: 8px;
+      padding: 13px;
+      background: var(--accent);
+      color: #0a0a0f;
+      border: none;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    button[type="submit"]:hover { opacity: 0.88; }
+    button[type="submit"]:active { transform: scale(0.98); }
+    button[type="submit"]:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin: 4px 0;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .footer-link {
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .footer-link a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .footer-link a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">Auth<span>Space</span></div>
+  <p class="subtitle">Secure access to your workspace</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('login')">Sign In</button>
+    <button class="tab" onclick="switchTab('signup')">Sign Up</button>
+  </div>
+
+  <!-- LOGIN FORM -->
+  <form id="login" class="form active" onsubmit="handleLogin(event)" novalidate autocomplete="off">
+    <!-- Honeypot bot trap -->
+    <input class="hp" type="text" name="website" tabindex="-1" aria-hidden="true" />
+
+    <div class="field">
+      <label for="l-email">Email</label>
+      <input id="l-email" type="email" placeholder="you@example.com" required maxlength="100" />
+      <span class="hint" id="l-email-err">Enter a valid email address.</span>
+    </div>
+    <div class="field">
+      <label for="l-pass">Password</label>
+      <input id="l-pass" type="password" placeholder="••••••••" required maxlength="128" />
+      <span class="hint" id="l-pass-err">Password is required.</span>
+    </div>
+    <div class="lockout-msg" id="lockout-msg">
+      🔒 Too many failed attempts. Try again in <span id="countdown">30</span>s.
+    </div>
+    <button type="submit" id="login-btn">Sign In</button>
+    <div class="divider">or</div>
+    <div class="footer-link">No account? <a href="#" onclick="switchTab('signup');return false;">Create one</a></div>
+  </form>
+
+  <!-- SIGNUP FORM -->
+  <form id="signup" class="form" onsubmit="handleSignup(event)" novalidate autocomplete="off">
+    <input class="hp" type="text" name="website" tabindex="-1" aria-hidden="true" />
+
+    <div class="field">
+      <label for="s-name">Full Name</label>
+      <input id="s-name" type="text" placeholder="Adhi" required maxlength="60" />
+      <span class="hint" id="s-name-err">Name must be 2–60 characters.</span>
+    </div>
+    <div class="field">
+      <label for="s-email">Email</label>
+      <input id="s-email" type="email" placeholder="you@example.com" required maxlength="100" />
+      <span class="hint" id="s-email-err">Enter a valid email address.</span>
+    </div>
+    <div class="field">
+      <label for="s-pass">Password</label>
+      <input id="s-pass" type="password" placeholder="Min. 8 characters" required maxlength="128" />
+      <span class="hint" id="s-pass-err">Password must be at least 8 characters.</span>
+    </div>
+    <button type="submit">Create Account</button>
+    <div class="divider">or</div>
+    <div class="footer-link">Already have an account? <a href="#" onclick="switchTab('login');return false;">Sign in</a></div>
+  </form>
+</div>
+
+<script>
+  // ── Tab switcher ────────────────────────────────────────────
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach((t,i) =>
+      t.classList.toggle('active', (tab==='login' ? i===0 : i===1)));
+    document.querySelectorAll('.form').forEach(f =>
+      f.classList.toggle('active', f.id === tab));
+    clearErrors();
+  }
+
+  // ── Sanitize: strip HTML tags from any string ───────────────
+  function sanitize(str) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+  }
+
+  // ── Validators ──────────────────────────────────────────────
+  const emailRe = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
+
+  function validateEmail(val) { return emailRe.test(val.trim()); }
+  function validatePass(val)  { return val.length >= 8; }
+  function validateName(val)  { return val.trim().length >= 2 && val.trim().length <= 60; }
+
+  function showErr(id, msg) {
+    const el = document.getElementById(id);
+    const inp = el.previousElementSibling;
+    el.textContent = msg;
+    el.classList.add('show');
+    inp.classList.add('error');
+  }
+  function clearErrors() {
+    document.querySelectorAll('.hint').forEach(e => e.classList.remove('show'));
+    document.querySelectorAll('input').forEach(e => e.classList.remove('error'));
+  }
+
+  // ── Rate limiting (5 attempts → 30s lockout) ─────────────────
+  let attempts = 0, locked = false;
+
+  function lockout() {
+    locked = true;
+    const btn = document.getElementById('login-btn');
+    const msg = document.getElementById('lockout-msg');
+    const cd  = document.getElementById('countdown');
+    btn.disabled = true;
+    msg.classList.add('show');
+    let secs = 30;
+    cd.textContent = secs;
+    const t = setInterval(() => {
+      secs--;
+      cd.textContent = secs;
+      if (secs <= 0) {
+        clearInterval(t);
+        locked = false;
+        attempts = 0;
+        btn.disabled = false;
+        msg.classList.remove('show');
+      }
+    }, 1000);
+  }
+
+  // ── Bot detection (honeypot) ─────────────────────────────────
+  function isBot(form) {
+    return form.querySelector('[name="website"]').value !== '';
+  }
+
+  // ── Login handler ────────────────────────────────────────────
+  function handleLogin(e) {
+    e.preventDefault();
+    clearErrors();
+    if (locked || isBot(e.target)) return;
+
+    const email = sanitize(document.getElementById('l-email').value);
+    const pass  = document.getElementById('l-pass').value;
+    let valid = true;
+
+    if (!validateEmail(email)) { showErr('l-email-err', 'Enter a valid email address.'); valid = false; }
+    if (!pass)                  { showErr('l-pass-err',  'Password is required.');        valid = false; }
+
+    if (!valid) { attempts++; if (attempts >= 5) lockout(); return; }
+
+    // ✅ Passed all checks — plug in your real auth logic here
+    alert('✅ Sign in validated! Connect your backend here.');
+    attempts = 0;
+  }
+
+  // ── Signup handler ───────────────────────────────────────────
+  function handleSignup(e) {
+    e.preventDefault();
+    clearErrors();
+    if (isBot(e.target)) return;
+
+    const name  = sanitize(document.getElementById('s-name').value);
+    const email = sanitize(document.getElementById('s-email').value);
+    const pass  = document.getElementById('s-pass').value;
+    let valid = true;
+
+    if (!validateName(name))   { showErr('s-name-err',  'Name must be 2–60 characters.'); valid = false; }
+    if (!validateEmail(email)) { showErr('s-email-err', 'Enter a valid email address.');  valid = false; }
+    if (!validatePass(pass))   { showErr('s-pass-err',  'Password must be at least 8 characters.'); valid = false; }
+
+    if (!valid) return;
+    eval("test")
+    element.innerHTML = "bad stuff";
+
+    // ✅ Passed all checks — plug in your real registration logic here
+    alert('✅ Sign up validated! Connect your backend here.');
+  }
+</script>
+
+</body>
+</html>
